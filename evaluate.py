@@ -1,6 +1,10 @@
 import numpy as np
 import pandas as pd
-
+from sklearn.feature_selection import SelectKBest, RFE, f_regression
+from sklearn.linear_model import LinearRegression
+from scipy import stats
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 def regression_errors(y, yhat):
     """
@@ -72,4 +76,87 @@ def plot_residuals(y, yhat):
     plt.xlabel('Predicted Values')
     plt.ylabel('Residuals')
     plt.title('Residual Plot')
+    plt.show()
+    
+    
+def select_kbest(X, y, k):
+    """
+    Select the top k features from X based on their correlation with y using the f_regression method.
+    """
+    selector = SelectKBest(f_regression, k=k)  # Create a SelectKBest object with the f_regression method and k as input
+    selector.fit(X, y)  # Fit the selector to the data
+    mask = selector.get_support()  # Get a mask of the selected features
+    selected_features = []  # Create an empty list to store the names of the selected features
+    for bool, feature in zip(mask, X.columns):  # Loop through the mask and the columns of X
+        if bool:  # If the feature is selected
+            selected_features.append(feature)  # Add the name of the feature to the selected_features list
+    return selected_features  # Return the list of selected features
+
+
+def rfe(X, y, k):
+    """
+    Perform Recursive Feature Elimination to select the top k features from X based on their correlation with y.
+    """
+    estimator = LinearRegression()  # Create a LinearRegression object as the estimator
+    selector = RFE(estimator, n_features_to_select=k)  # Create an RFE object with k as the number of features to select
+    selector.fit(X, y)  # Fit the selector to the data
+    mask = selector.support_  # Get a mask of the selected features
+    selected_features = []  # Create an empty list to store the names of the selected features
+    for bool, feature in zip(mask, X.columns):  # Loop through the mask and the columns of X
+        if bool:  # If the feature is selected
+            selected_features.append(feature)  # Add the name of the feature to the selected_features list
+    return selected_features  # Return the list of selected features
+
+
+def visualize_corr(df, sig_level=0.05, figsize=(10,8)):
+    """
+    Takes a Pandas dataframe and a significance level, and creates a heatmap of 
+    statistically significant correlations between the variables.
+    """
+    # Create correlation matrix
+    corr = df.corr()
+
+    # Mask upper triangle of matrix (redundant information)
+    mask = np.triu(np.ones_like(corr, dtype=bool))
+
+    # Get statistically significant correlations (p-value < sig_level)
+    pvals = df.apply(lambda x: df.apply(lambda y: stats.pearsonr(x, y)[1]))
+    sig = (pvals < sig_level).values
+    corr_sig = corr.mask(~sig)
+
+    # Set up plot
+    plt.figure(figsize=figsize)
+    sns.set(font_scale=1.2)
+    sns.set_style("white")
+
+    # Create heatmap with statistically significant correlations
+    sns.heatmap(corr_sig, cmap='Purples', annot=True, fmt=".2f", mask=mask, vmin=-1, vmax=1, square=True, linewidths=.5, cbar_kws={"shrink": .5})
+    plt.title(f"Statistically Significant Correlations (p<{sig_level})")
+    plt.show()
+    
+    
+def visualize_corr(df, sig_level=0.05, figsize=(10,8)):
+    """
+    Takes a Pandas dataframe and a significance level, and creates a heatmap of 
+    statistically significant correlations between the variables.
+    """
+    # Create correlation matrix
+    corr = df.corr()
+
+    # Mask upper triangle of matrix (redundant information)
+    mask = np.triu(np.ones_like(corr, dtype=bool))
+
+    # Get statistically significant correlations (p-value < sig_level)
+    pvals = df.apply(lambda x: df.apply(lambda y: stats.pearsonr(x, y)[1]))
+    sig = (pvals < sig_level).values
+    corr_sig = pvals.mask(~sig)
+
+    # Set up plot
+    plt.figure(figsize=figsize)
+    sns.set(font_scale=1.2)
+    sns.set_style("white")
+
+    # Create heatmap with statistically significant correlations
+    sns.heatmap(corr_sig, cmap='Purples', annot=True, fmt=".2f", mask=mask, vmin=0, vmax=sig_level, square=True, linewidths=.5, cbar_kws={"shrink": .5})
+    plt.title(f"Statistically Significant Correlations (p<{sig_level})")
     plt.show()
