@@ -144,7 +144,7 @@ def prepare_zillow(df):
     ''' Prepare zillow data for exploration'''
 
     # removing outliers
-    df = remove_outliers(df, 1.5, ['bedrooms', 'bathrooms', 'area', 'tax_value', 'taxamount'])
+    df = remove_outliers(df, 1.5, ['bedrooms', 'bathrooms', 'area', 'tax_value'])
     
     # converting column datatypes
     df.fips = df.fips.astype(object)
